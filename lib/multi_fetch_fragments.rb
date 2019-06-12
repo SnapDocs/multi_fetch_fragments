@@ -2,11 +2,13 @@ module MultiFetchFragments
   extend ActiveSupport::Concern
 
   included do
-    alias_method_chain :render_collection, :multi_fetch_cache
+    prepend MultiFetchCollectionRenderer
   end
 
   private
-    def render_collection_with_multi_fetch_cache
+
+  module MultiFetchCollectionRenderer
+    def render_collection
 
       return nil if @collection.blank?
 
@@ -78,14 +80,17 @@ module MultiFetchFragments
 
       results.join(spacer).html_safe
     end
+  end
 
     def cache_collection?
       cache_option = @options[:cache].presence || @locals[:cache].presence
       ActionController::Base.perform_caching && cache_option
     end
 
-    # from Rails fragment_cache_key in ActionController::Caching::Fragments. Adding it here since it's tucked inside an instance method on the controller, and 
-    # it's utility could be used in a view without a controller
+    # from Rails fragment_cache_key in ActionController::Caching::Fragments
+    #
+    # Adding it here since it's tucked inside an instance method on the
+    # controller, and its utility could be used in a view without a controller.
     def fragment_cache_key(key)
       ActiveSupport::Cache.expand_cache_key(key.is_a?(Hash) ? url_for(key).split("://").last : key, :views)
     end
